@@ -1,0 +1,76 @@
+// Import required modules
+const express = require('express');
+const mongoose = require('mongoose');
+const app = express();
+
+// Connect to MongoDB database
+mongoose.connect('mongodb://localhost:27017/myDatingDb', { useNewUrlParser: true });
+
+// Define user schema
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  password: String,
+  age: Number,
+  gender: String,
+  interests: [String],
+  location: String,
+  profilePicture: String
+});
+
+// Create user model
+const User = mongoose.model('User', userSchema);
+
+// Define API endpoints
+app.post('/register', async (req, res) => {
+  const { name, email, password, age, gender, interests, location, profilePicture } = req.body;
+  const user = new User({ name, email, password, age, gender, interests, location, profilePicture });
+  try {
+    await user.save();
+    res.send('User registered successfully!');
+  } catch (err) {
+    res.status(500).send('Error registering user');
+  }
+});
+
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email, password });
+    if (user) {
+      res.send('Login successful!');
+    } else {
+      res.status(401).send('Invalid email or password');
+    }
+  } catch (err) {
+    res.status(500).send('Error logging in');
+  }
+});
+
+app.get('/users', async (req, res) => {
+  try {
+    const users = await User.find();
+    res.send(users);
+  } catch (err) {
+    res.status(500).send('Error fetching users');
+  }
+});
+
+app.get('/user/:id', async (req, res) => {
+  const id = req.params.id;
+  try {
+    const user = await User.findById(id);
+    if (user) {
+      res.send(user);
+    } else {
+      res.status(404).send('User not found');
+    }
+  } catch (err) {
+    res.status(500).send('Error fetching user');
+  }
+});
+
+// Start server
+app.listen(3000, () => {
+  console.log('Server listening on port 3000');
+});
